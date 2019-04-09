@@ -1,0 +1,64 @@
+{
+    "name": "vscode-csv-helper",
+    "displayName": "vscode-csv-helper",
+    "description": "Helper utilities for csv files",
+    "version": "0.0.1",
+    "publisher": "narsenico",
+    "engines": {
+        "vscode": "^1.33.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/narsenico/vscode-csv-helper.git"
+    },
+    "bugs": {
+        "url": "https://github.com/narsenico/vscode-csv-helper/issues",
+        "email": "not_amon-dev@yahoo.it"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onLanguage:csv",
+        "onCommand:extension.setSeparator"
+    ],
+    "license": "MIT",
+    "main": "./extension",
+    "contributes": {
+        "commands": [
+            {
+                "command": "extension.setSeparator",
+                "title": "csv-helper: set as separator"
+            }
+        ],
+        "languages": [
+            {
+                "id": "csv",
+                "aliases": [
+                    "CSV",
+                    "csv"
+                ],
+                "extensions": [
+                    ".csv"
+                ]
+            }
+        ]
+    },
+    "scripts": {
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "node ./node_modules/vscode/bin/test",
+        "vscode:prepublish": "webpack --mode production",
+        "compile": "webpack --mode none",
+        "watch": "webpack --mode none --watch",
+        "vsce:package": "vsce package",
+        "vsce:publish": "vsce publish"
+    },
+    "devDependencies": {
+        "@types/mocha": "^2.2.42",
+        "@types/node": "^8.10.25",
+        "eslint": "^4.11.0",
+        "vscode": "^1.1.21",
+        "webpack": "^4.29.6",
+        "webpack-cli": "^3.3.0"        
+    }
+}
