@@ -1,18 +1,41 @@
 const vscode = require('vscode');
+const LANG_CSV = 'csv';
 
 class CSVInfo {
     constructor() {
+        this._enabled = false;
         this._statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-        this.displayInfo(vscode.window.activeTextEditor, vscode.window.activeTextEditor.selections);
-        // TODO: devo capire anche se il file è un CSV
-        vscode.window.onDidChangeActiveTextEditor(e => e ? this.displayInfo(e.textEditor, e.selections) : this._statusBar.hide());
-        vscode.window.onDidChangeTextEditorSelection(e => e && this.displayInfo(e.textEditor, e.selections));
-        vscode.window.onDidChangeTextEditorViewColumn(e => e && this.displayInfo(e.textEditor, e.selections));
+        this._onDidOpenTextDocument = vscode.workspace.onDidOpenTextDocument(() => this.onDidOpenTextDocument());
+        this._onDidChangeActiveTextEditor = vscode.window.onDidChangeActiveTextEditor(() => this.onDidChangeActiveTextEditor());
+        this.onDidChangeActiveTextEditor();
+    }
+
+    onDidOpenTextDocument() {
+        this.onDidChangeActiveTextEditor();
+    }
+
+    onDidChangeActiveTextEditor() {
+        const textEditor = vscode.window.activeTextEditor;
+        // elaboro la posizione solo se è un documento CSV
+        if (textEditor && textEditor.document && textEditor.document.languageId === LANG_CSV) {
+            // se ancora non l'ho fatto attivo i listener
+            if (!this._onDidChangeTextEditorSelection) {
+                this._onDidChangeTextEditorSelection = vscode.window.onDidChangeTextEditorSelection(e => e && this.displayInfo(e.textEditor, e.selections));
+            }
+            if (!this._onDidChangeTextEditorViewColumn) {
+                this._onDidChangeTextEditorViewColumn = vscode.window.onDidChangeTextEditorViewColumn(e => e && this.displayInfo(e.textEditor, e.selections));
+            }
+            this._enabled = true;
+            this.displayInfo(textEditor, textEditor.selections);
+        } else {
+            // nascondo la barra e disabilito i listener
+            this._enabled = false;
+            this._statusBar.hide();            
+        }
     }
 
     displayInfo(textEditor, selections) {
-        // TODO: in base a textEditor.document.languageId individuo il separatore (per default ';')
-
+        if (!this._enabled) return;
         // mi interessa solo la prima selezione
         // prelevo il testo dall'inizio della riga al primo carattere selezionato
         // quindi conto quanti caratteri separatori ci sono nel testo per calcolare l'indice della colonna
@@ -52,12 +75,19 @@ class CSVInfo {
             && editor.selection.start.line === editor.selection.end.line
             && editor.selection.end.character === editor.selection.start.character + 1) {
                 const separator = editor.document.lineAt(editor.selection.start.line).text.charAt(editor.selection.start.character);
-            console.log('new separator', separator);
+            console.log('new separator', separator, editor.document.id);
             // TODO: ** assegnare ** il nuovo separatore al documento
+            //  volevo usare editor.id per tenere traccia dell'editor, ma l'id cambia al salvataggio
             // this.displayInfo(editor, editor.selections);
         } else {
             this.showError('Selection must contain exactly one separator character');
         }
+    }
+
+    toggleHeader() {
+        const editor = vscode.window.activeTextEditor;
+        // TODO: considerare la prima riga come intestazinoe
+        console.log('toggleHeader', editor.id);
     }
 
     showError(error) {
@@ -67,7 +97,11 @@ class CSVInfo {
     }
 
     dispose() {
-        this._statusBar.dispose();
+        this._statusBar && this._statusBar.dispose();
+        this._onDidOpenTextDocument && this._onDidOpenTextDocument.dispose();
+        this._onDidChangeActiveTextEditor && this._onDidChangeActiveTextEditor.dispose();
+        this._onDidChangeTextEditorSelection && this._onDidChangeTextEditorSelection.dispose();
+        this._onDidChangeTextEditorViewColumn && this._onDidChangeTextEditorViewColumn.dispose();
     }
 }
 
@@ -76,6 +110,9 @@ exports.activate = (context) => {
 
     context.subscriptions.push(vscode.commands.registerCommand('extension.setSeparator', function () {
         info.setSeparatorBySelection();
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand('extension.toggleHeader', function () {
+        info.toggleHeader();
     }));
     context.subscriptions.push(info);
 };

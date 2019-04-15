@@ -20,7 +20,8 @@
     ],
     "activationEvents": [
         "onLanguage:csv",
-        "onCommand:extension.setSeparator"
+        "onCommand:extension.setSeparator",
+        "onCommand:extension.toggleHeader"
     ],
     "license": "MIT",
     "main": "./extension",
@@ -29,6 +30,10 @@
             {
                 "command": "extension.setSeparator",
                 "title": "csv-helper: set as separator"
+            },
+            {
+                "command": "extension.toggleHeader",
+                "title": "csv-helper: toggle first line as header"
             }
         ],
         "languages": [
@@ -59,6 +64,6 @@
         "eslint": "^4.11.0",
         "vscode": "^1.1.21",
         "webpack": "^4.29.6",
-        "webpack-cli": "^3.3.0"        
+        "webpack-cli": "^3.3.0"
     }
 }
