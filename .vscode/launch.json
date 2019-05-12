@@ -15,7 +15,7 @@
             ]
         },
         {
-            "name": "Extension with file",
+            "name": "Extension with test.csv",
             "type": "extensionHost",
             "request": "launch",
             "runtimeExecutable": "${execPath}",
@@ -23,7 +23,18 @@
                 "--disable-extensions",
                 "--extensionDevelopmentPath=${workspaceFolder}",
                 "${workspaceFolder}/test/test.csv"
-            ]           
+            ]
+        },
+        {
+            "name": "Extension with test.1.csv",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--disable-extensions",
+                "--extensionDevelopmentPath=${workspaceFolder}",
+                "${workspaceFolder}/test/test.1.csv"
+            ]
         },
         {
             "name": "Extension Tests",
