@@ -15,39 +15,51 @@ const SEPARATORS = {
 };
 const DEFAULT_SEPARATOR = ';';
 
+/**
+ * eventi cambio linguaggio
+ * - closed
+ * - opened
+ * - changed
+ *
+ * eventi nuovo file
+ * - opened
+ * - changed
+ * */
+
 class CSVHelper {
     constructor() {
+        this._enabled = false;
         this._statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-        this._onDidChangeActiveTextEditor = vscode.window.onDidChangeActiveTextEditor(e => e && this._documentChanged(e.document));
+        this._onDidChangeActiveTextEditor = vscode.window.onDidChangeActiveTextEditor(e => this._documentChanged( e ? e.document : undefined));
+        this._onDidOpenTextDocument = vscode.workspace.onDidOpenTextDocument(e => this._documentOpened(e));
+        this._onDidCloseTextDocument = vscode.workspace.onDidCloseTextDocument(e => this._documentClosed(e));
         if (vscode.window.activeTextEditor) {
             this._documentChanged(vscode.window.activeTextEditor.document);
         }
+    }
 
-        // TODO: intercettare il cambio di languageId
+    _documentOpened(document) {
+        console.log('opened', document && `${document.fileName}(${document.languageId})`);
+        // se apro un documento CSV abilito tutto
+        if (this.isCSV(document)) {
+            !this._enabled && this.enable();
+        }
+    }
+
+    _documentClosed(document) {
+        console.log('closed', document && `${document.fileName}(${document.languageId})`);
+        // se ho chiuso un documento CSV disabilito tutto
+        if (this.isCSV(document)) {
+            this._enabled && this.disable();
+        }
     }
 
     _documentChanged(document) {
-        if (document && CSV_LANG_IDS.indexOf(document.languageId) >= 0) {
-            if (!this._onDidChangeTextEditorSelection) {
-                this._onDidChangeTextEditorSelection = vscode.window.onDidChangeTextEditorSelection(e =>
-                    e && this._displayColInfo(e.textEditor, e.selections));
-            }
-            if (!this._onDidChangeTextEditorViewColumn) {
-                this._onDidChangeTextEditorViewColumn = vscode.window.onDidChangeTextEditorViewColumn(e =>
-                    e && this._displayColInfo(e.textEditor, e.selections));
-            }
-            this._statusBar && !this._statusBar._visible && this._statusBar.show();
-            this._displayColInfo(vscode.window.activeTextEditor, vscode.window.activeTextEditor.selections);
+        console.log('changed', document && `${document.fileName}(${document.languageId})`);
+        if (this.isCSV(document)) {
+            !this._enabled && this.enable();
         } else {
-            if (this._onDidChangeTextEditorSelection) {
-                this._onDidChangeTextEditorSelection.dispose();
-                this._onDidChangeTextEditorSelection = null;
-            }
-            if (this._onDidChangeTextEditorViewColumn) {
-                this._onDidChangeTextEditorViewColumn.dispose();
-                this._onDidChangeTextEditorViewColumn = null;
-            }
-            this._statusBar && this._statusBar._visible && this._statusBar.hide();
+            this._enabled && this.disable();
         }
     }
 
@@ -105,19 +117,61 @@ class CSVHelper {
         }
     }
 
+    isCSV(document) {
+        return (!!document && CSV_LANG_IDS.indexOf(document.languageId) >= 0);
+    }
+
+    enable() {
+        console.log('-> enable');
+        if (!this._onDidChangeTextEditorSelection) {
+            this._onDidChangeTextEditorSelection = vscode.window.onDidChangeTextEditorSelection(e =>
+                e && this._displayColInfo(e.textEditor, e.selections));
+        }
+        if (!this._onDidChangeTextEditorViewColumn) {
+            this._onDidChangeTextEditorViewColumn = vscode.window.onDidChangeTextEditorViewColumn(e =>
+                e && this._displayColInfo(e.textEditor, e.selections));
+        }
+        this._statusBar && !this._statusBar._visible && this._statusBar.show();
+        this._displayColInfo(vscode.window.activeTextEditor, vscode.window.activeTextEditor.selections);
+        this._enabled = true;
+    }
+
+    disable() {
+        console.log('-> disable');
+        if (this._onDidChangeTextEditorSelection) {
+            this._onDidChangeTextEditorSelection.dispose();
+            this._onDidChangeTextEditorSelection = null;
+        }
+        if (this._onDidChangeTextEditorViewColumn) {
+            this._onDidChangeTextEditorViewColumn.dispose();
+            this._onDidChangeTextEditorViewColumn = null;
+        }
+        this._statusBar && this._statusBar._visible && this._statusBar.hide();
+        this._enabled = false;
+    }
+
     dispose() {
+        this._onDidOpenTextDocument && this._onDidOpenTextDocument.dispose();
+        this._onDidCloseTextDocument && this._onDidCloseTextDocument.dispose();
         this._onDidChangeTextEditorSelection && this._onDidChangeTextEditorSelection.dispose();
         this._onDidChangeTextEditorViewColumn && this._onDidChangeTextEditorViewColumn.dispose();
         this._onDidChangeActiveTextEditor && this._onDidChangeActiveTextEditor.dispose();
         this._statusBar && this._statusBar.dispose();
+        this._enabled = false;
     }
 }
 
 // TODO: gestire meglio attivazione e disattivazione (chiamare CSVHelper.dispose()?)
 
+let info;
+
 exports.activate = (context) => {
-    const info = new CSVHelper();
+    console.log('activate')
+    !info && (info = new CSVHelper());
     context.subscriptions.push(info);
 };
 
-exports.deactivate = () => { };
+exports.deactivate = () => {
+    console.log('deactivate')
+    info && info.dispose();
+};
