@@ -26,11 +26,12 @@ const DEFAULT_SEPARATOR = ';';
  * - changed
  * */
 
-class CSVHelper {
-    constructor() {
+class CSVHelper extends vscode.Disposable {
+    constructor(callOnDispose) {
+        super(callOnDispose);
         this._enabled = false;
         this._statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-        this._onDidChangeActiveTextEditor = vscode.window.onDidChangeActiveTextEditor(e => this._documentChanged( e ? e.document : undefined));
+        this._onDidChangeActiveTextEditor = vscode.window.onDidChangeActiveTextEditor(e => this._documentChanged(e ? e.document : undefined));
         this._onDidOpenTextDocument = vscode.workspace.onDidOpenTextDocument(e => this._documentOpened(e));
         this._onDidCloseTextDocument = vscode.workspace.onDidCloseTextDocument(e => this._documentClosed(e));
         if (vscode.window.activeTextEditor) {
@@ -63,6 +64,18 @@ class CSVHelper {
         }
     }
 
+    /**
+     * Individua il numero di colonna sul quale è posizionato il cursore
+     * e lo riporta sulla barra stato.
+     * Se la selezione coinvolge più colonne (anche se su righe diverse, non importa),
+     * viene riportata la colonna di inzio selezione e quella di fine.
+     *
+     * Il carattere separatore è dato dal tipo di linguaggio associato al documento.
+     *
+     * @param {TextEditor} textEditor editor per il quale mostrare le info
+     * @param {Selection[]} selections array di selezioni attive sull'editor,
+     * viene considerata solo la prima selezione
+     */
     _displayColInfo(textEditor, selections) {
         const separator = SEPARATORS[textEditor.document.languageId] || DEFAULT_SEPARATOR;
         // mi interessa solo la prima selezione
@@ -70,11 +83,13 @@ class CSVHelper {
         // quindi conto quanti caratteri separatori ci sono nel testo per calcolare l'indice della colonna
         const selection = selections[0];
         let col1, col2;
+        // calcol la colonna di inizio selezione
         if (selection.start.character === 0) {
             col1 = 1;
         } else {
             col1 = this._calcCol(textEditor, selection.start, separator);
         }
+        // calcolo la colonna di fine selezione
         if (selection.end.character === 0) {
             col2 = 1;
         } else if (selection.end.line === selection.start.line && selection.end.character === selection.start.character) {
@@ -82,14 +97,22 @@ class CSVHelper {
         } else {
             col2 = this._calcCol(textEditor, selection.end, separator);
         }
+        // se inizio e fine coincidono riporto solo la prima colonna, altrimenti entrambe
         if (col2 === col1) {
             this._statusBar.text = `CSV c${col1}`;
         } else {
             this._statusBar.text = `CSV c${col1}~${col2}`;
         }
-        this._statusBar.show();
     }
 
+    /**
+     * Calcola il numero di colonna.
+     * Vengono considerati i campi sia racchiusi tra "" che non.
+     *
+     * @param {TextEditor} textEditor editor sul quale operare il conteggio
+     * @param {Position} position posizione (linea, num. carattere) da cui estrapolare il numero di colonna
+     * @param {String} separator carattere separatore
+     */
     _calcCol(textEditor, position, separator) {
         // considero il testo dall'inizio della riga fino alla posizione
         const text = textEditor.document.getText(
@@ -100,6 +123,7 @@ class CSVHelper {
         let count = 1;
         for (let ch of text) {
             switch (ch) {
+                // TODO: forse ha senso solo se " è il primo carattere non vuoto del campo
                 case '"':
                     inquote = !inquote;
                     break;
@@ -117,10 +141,20 @@ class CSVHelper {
         }
     }
 
+    /**
+     * Valore se un documento è CSV in base al tipo di linguaggio associato ad esso.
+     *
+     * @param {TextDocument} document documento da valutare, può essere null/undefined
+     * @returns true se è un documento CSV, false altrimenti
+     */
     isCSV(document) {
         return (!!document && CSV_LANG_IDS.indexOf(document.languageId) >= 0);
     }
 
+    /**
+     * Abilita tutte le funzionalità dell'estensione.
+     * Tutti i listeners sull'editor vengono creati e la barra stato mostrata.
+     */
     enable() {
         console.log('-> enable');
         if (!this._onDidChangeTextEditorSelection) {
@@ -136,6 +170,10 @@ class CSVHelper {
         this._enabled = true;
     }
 
+    /**
+     * Disabilita tutte le funzionalità dell'estensione.
+     * Tutti i listeners sull'editor venono dismessi, la barra stato è nascosta.
+     */
     disable() {
         console.log('-> disable');
         if (this._onDidChangeTextEditorSelection) {
@@ -158,6 +196,7 @@ class CSVHelper {
         this._onDidChangeActiveTextEditor && this._onDidChangeActiveTextEditor.dispose();
         this._statusBar && this._statusBar.dispose();
         this._enabled = false;
+        super.dispose();
     }
 }
 
