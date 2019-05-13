@@ -22,23 +22,15 @@
         "onLanguage:csv",
         "onLanguage:csv-semicolon",
         "onLanguage:csv-comma",
-        "onCommand:extension.setSeparator"
+        "onLanguage:csv-pipe",
+        "onLanguage:csv-dollar",
+        "onLanguage:csv-section-sign"
     ],
     "license": "MIT",
     "main": "./extension",
     "contributes": {
         "commands": [],
         "languages": [
-            {
-                "id": "csv",
-                "aliases": [
-                    "CSV",
-                    "csv"
-                ],
-                "extensions": [
-                    ".csv"
-                ]
-            },
             {
                 "id": "csv-semicolon",
                 "aliases": [
@@ -54,6 +46,46 @@
                 "aliases": [
                     "CSV comma",
                     "csv comma"
+                ],
+                "extensions": [
+                    ".csv"
+                ]
+            },
+            {
+                "id": "csv-pipe",
+                "aliases": [
+                    "CSV pipe",
+                    "csv pipe"
+                ],
+                "extensions": [
+                    ".csv"
+                ]
+            },
+            {
+                "id": "csv-dollar",
+                "aliases": [
+                    "CSV dollar",
+                    "csv dollar"
+                ],
+                "extensions": [
+                    ".csv"
+                ]
+            },
+            {
+                "id": "csv-section-sign",
+                "aliases": [
+                    "CSV section-sign",
+                    "csv section-sign"
+                ],
+                "extensions": [
+                    ".csv"
+                ]
+            },
+            {
+                "id": "csv",
+                "aliases": [
+                    "CSV",
+                    "csv"
                 ],
                 "extensions": [
                     ".csv"

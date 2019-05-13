@@ -1,10 +1,18 @@
+/*!
+ * vscode-csv-helper
+ * https://github.com/narsenico/vscode-csv-helper
+ *
+ * Copyright (c) 2019, Gianfranco Caldi.
+ * Released under the MIT License.
+ */
 const vscode = require('vscode');
 const CSV_LANG_IDS = [
     'csv',
     'csv-semicolon',
     'csv-comma',
     'csv-pipe',
-    'csv-dollar'
+    'csv-dollar',
+    'csv-section-sign'
 ];
 const SEPARATORS = {
     'csv': ';',
@@ -12,10 +20,13 @@ const SEPARATORS = {
     'csv-comma': ',',
     'csv-pipe': '|',
     'csv-dollar': '$',
+    'csv-section-sign': '§' // \u00A7
 };
 const DEFAULT_SEPARATOR = ';';
 
 /**
+ * note
+ *
  * eventi cambio linguaggio
  * - closed
  * - opened
@@ -24,7 +35,18 @@ const DEFAULT_SEPARATOR = ';';
  * eventi nuovo file
  * - opened
  * - changed
+ *
+ * impostare lingua a documento
+ * - vscode.langauges.setTextDocument
  * */
+
+ /**
+  * TODO:
+  *
+  * - nuovo comando: modificare languageId in base al carattere separatore selezionato
+  * - nuovo comando: rimuove o racchiude i campi in ""
+  *
+  */
 
 class CSVHelper extends vscode.Disposable {
     constructor(callOnDispose) {
