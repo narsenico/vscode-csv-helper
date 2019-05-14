@@ -26,7 +26,6 @@
     ],
     "activationEvents": [
         "onLanguage:csv",
-        "onLanguage:csv-semicolon",
         "onLanguage:csv-comma",
         "onLanguage:csv-pipe",
         "onLanguage:csv-dollar",
@@ -35,18 +34,13 @@
     "license": "MIT",
     "main": "./extension",
     "contributes": {
-        "commands": [],
-        "languages": [
+        "commands": [
             {
-                "id": "csv-semicolon",
-                "aliases": [
-                    "CSV semicolon",
-                    "csv semicolon"
-                ],
-                "extensions": [
-                    ".csv"
-                ]
-            },
+                "command": "extension.setSeparatorFromSelection",
+                "title": "vscode-csv-helper: set document separator"
+            }
+        ],
+        "languages": [
             {
                 "id": "csv-comma",
                 "aliases": [

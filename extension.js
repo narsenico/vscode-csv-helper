@@ -10,7 +10,6 @@
 const vscode = require('vscode');
 const CSV_LANG_IDS = [
     'csv',
-    'csv-semicolon',
     'csv-comma',
     'csv-pipe',
     'csv-dollar',
@@ -18,7 +17,6 @@ const CSV_LANG_IDS = [
 ];
 const SEPARATORS = {
     'csv': ';',
-    'csv-semicolon': ';',
     'csv-comma': ',',
     'csv-pipe': '|',
     'csv-dollar': '$',
@@ -45,7 +43,6 @@ const DEFAULT_SEPARATOR = ';';
  /**
   * TODO:
   *
-  * - nuovo comando: modificare languageId in base al carattere separatore selezionato
   * - nuovo comando: rimuove o racchiude i campi in ""
   *
   */
@@ -212,6 +209,30 @@ class CSVHelper extends vscode.Disposable {
         this._enabled = false;
     }
 
+    /**
+     * Estrae il primo carattere della selezione (che deve contenere quindi almeno un carattere).
+     * Se il carattere è compreso tra i separatori per cui è disponibile un languageId, lo assegna al documento.
+     *
+     * @param {TextEditor} textEditor   editor al cui documento verrà assegnato un diverso separatore di campi
+     */
+    setSeparatorFromSelection(textEditor) {
+        const selection = textEditor.selection;
+        // considero il primo carattere della selezione
+        const separator = textEditor.document.getText(
+            new vscode.Range(selection.start, selection.end)
+        ).charAt(0);
+        console.log('setSeparatorFromSelection', separator);
+        if (separator) {
+            for (let key in SEPARATORS) {
+                if (SEPARATORS[key] === separator) {
+                    vscode.languages.setTextDocumentLanguage(textEditor.document, key);
+                    return;
+                }
+            }
+        }
+        this._showError('Separator not supported. Available character separators are ' + Object.values(SEPARATORS).join(' '));
+    }
+
     dispose() {
         this._onDidOpenTextDocument && this._onDidOpenTextDocument.dispose();
         this._onDidCloseTextDocument && this._onDidCloseTextDocument.dispose();
@@ -232,6 +253,7 @@ exports.activate = (context) => {
     console.log('activate')
     !info && (info = new CSVHelper());
     context.subscriptions.push(info);
+    vscode.commands.registerTextEditorCommand('extension.setSeparatorFromSelection', textEditor => info.setSeparatorFromSelection(textEditor));
 };
 
 exports.deactivate = () => {
