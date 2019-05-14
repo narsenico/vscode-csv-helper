@@ -4,6 +4,8 @@
  *
  * Copyright (c) 2019, Gianfranco Caldi.
  * Released under the MIT License.
+ *
+ * Icon made by Darius Dan from www.flaticon.com
  */
 const vscode = require('vscode');
 const CSV_LANG_IDS = [

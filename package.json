@@ -4,6 +4,7 @@
     "description": "Helper utilities for csv files",
     "version": "0.0.1",
     "publisher": "narsenico",
+    "icon": "csv.png",
     "engines": {
         "vscode": "^1.33.0"
     },
@@ -16,7 +17,12 @@
         "email": "not_amon-dev@yahoo.it"
     },
     "categories": [
+        "Programming Languages",
         "Other"
+    ],
+    "keywords": [
+        "csv",
+        "separator"
     ],
     "activationEvents": [
         "onLanguage:csv",
