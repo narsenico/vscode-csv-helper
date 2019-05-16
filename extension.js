@@ -40,16 +40,15 @@ const DEFAULT_SEPARATOR = ';';
  * - vscode.langauges.setTextDocument
  * */
 
- /**
-  * TODO:
-  *
-  * - nuovo comando: rimuove o racchiude i campi in ""
-  *
-  */
+/**
+ * TODO:
+ *
+ * - nuovo comando: rimuove o racchiude i campi in ""
+ * - nuovo comando: sostituisci separatore
+ */
 
-class CSVHelper extends vscode.Disposable {
-    constructor(callOnDispose) {
-        super(callOnDispose);
+const helper = {
+    init() {
         this._enabled = false;
         this._statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
         this._onDidChangeActiveTextEditor = vscode.window.onDidChangeActiveTextEditor(e => this._documentChanged(e ? e.document : undefined));
@@ -58,32 +57,32 @@ class CSVHelper extends vscode.Disposable {
         if (vscode.window.activeTextEditor) {
             this._documentChanged(vscode.window.activeTextEditor.document);
         }
-    }
+    },
 
     _documentOpened(document) {
         console.log('opened', document && `${document.fileName}(${document.languageId})`);
         // se apro un documento CSV abilito tutto
-        if (this.isCSV(document)) {
+        if (isCSV(document)) {
             !this._enabled && this.enable();
         }
-    }
+    },
 
     _documentClosed(document) {
         console.log('closed', document && `${document.fileName}(${document.languageId})`);
         // se ho chiuso un documento CSV disabilito tutto
-        if (this.isCSV(document)) {
+        if (isCSV(document)) {
             this._enabled && this.disable();
         }
-    }
+    },
 
     _documentChanged(document) {
         console.log('changed', document && `${document.fileName}(${document.languageId})`);
-        if (this.isCSV(document)) {
+        if (isCSV(document)) {
             !this._enabled && this.enable();
         } else {
             this._enabled && this.disable();
         }
-    }
+    },
 
     /**
      * Individua il numero di colonna sul quale è posizionato il cursore
@@ -124,7 +123,7 @@ class CSVHelper extends vscode.Disposable {
         } else {
             this._statusBar.text = `CSV c${col1}~${col2}`;
         }
-    }
+    },
 
     /**
      * Calcola il numero di colonna.
@@ -154,23 +153,7 @@ class CSVHelper extends vscode.Disposable {
             }
         }
         return count;
-    }
-
-    _showError(error) {
-        if (vscode.window) {
-            vscode.window.showErrorMessage(error);
-        }
-    }
-
-    /**
-     * Valore se un documento è CSV in base al tipo di linguaggio associato ad esso.
-     *
-     * @param {TextDocument} document documento da valutare, può essere null/undefined
-     * @returns true se è un documento CSV, false altrimenti
-     */
-    isCSV(document) {
-        return (!!document && CSV_LANG_IDS.indexOf(document.languageId) >= 0);
-    }
+    },
 
     /**
      * Abilita tutte le funzionalità dell'estensione.
@@ -189,7 +172,7 @@ class CSVHelper extends vscode.Disposable {
         this._statusBar && !this._statusBar._visible && this._statusBar.show();
         this._displayColInfo(vscode.window.activeTextEditor, vscode.window.activeTextEditor.selections);
         this._enabled = true;
-    }
+    },
 
     /**
      * Disabilita tutte le funzionalità dell'estensione.
@@ -207,31 +190,7 @@ class CSVHelper extends vscode.Disposable {
         }
         this._statusBar && this._statusBar._visible && this._statusBar.hide();
         this._enabled = false;
-    }
-
-    /**
-     * Estrae il primo carattere della selezione (che deve contenere quindi almeno un carattere).
-     * Se il carattere è compreso tra i separatori per cui è disponibile un languageId, lo assegna al documento.
-     *
-     * @param {TextEditor} textEditor   editor al cui documento verrà assegnato un diverso separatore di campi
-     */
-    setSeparatorFromSelection(textEditor) {
-        const selection = textEditor.selection;
-        // considero il primo carattere della selezione
-        const separator = textEditor.document.getText(
-            new vscode.Range(selection.start, selection.end)
-        ).charAt(0);
-        console.log('setSeparatorFromSelection', separator);
-        if (separator) {
-            for (let key in SEPARATORS) {
-                if (SEPARATORS[key] === separator) {
-                    vscode.languages.setTextDocumentLanguage(textEditor.document, key);
-                    return;
-                }
-            }
-        }
-        this._showError('Separator not supported. Available character separators are ' + Object.values(SEPARATORS).join(' '));
-    }
+    },
 
     dispose() {
         this._onDidOpenTextDocument && this._onDidOpenTextDocument.dispose();
@@ -241,22 +200,89 @@ class CSVHelper extends vscode.Disposable {
         this._onDidChangeActiveTextEditor && this._onDidChangeActiveTextEditor.dispose();
         this._statusBar && this._statusBar.dispose();
         this._enabled = false;
-        super.dispose();
     }
 }
 
-// TODO: gestire meglio attivazione e disattivazione (chiamare CSVHelper.dispose()?)
+function showError(error) {
+    if (vscode.window) {
+        vscode.window.showErrorMessage(error);
+    }
+}
 
-let info;
+/**
+ * Valore se un documento è CSV in base al tipo di linguaggio associato ad esso.
+ *
+ * @param {TextDocument} document documento da valutare, può essere null/undefined
+ * @returns true se è un documento CSV, false altrimenti
+ */
+function isCSV(document) {
+    return (!!document && CSV_LANG_IDS.indexOf(document.languageId) >= 0);
+}
+
+/**
+ * Estrae il primo carattere della selezione (che deve contenere quindi almeno un carattere).
+ * Se il carattere è compreso tra i separatori per cui è disponibile un languageId, lo assegna al documento.
+ *
+ * @param {TextEditor} textEditor   editor al cui documento verrà assegnato un diverso separatore di campi
+ */
+function setSeparatorFromSelection(textEditor) {
+    const selection = textEditor.selection;
+    // considero il primo carattere della selezione
+    const separator = textEditor.document.getText(
+        new vscode.Range(selection.start, selection.end)
+    ).charAt(0);
+    console.log('setSeparatorFromSelection', separator);
+    if (separator) {
+        for (let key in SEPARATORS) {
+            if (SEPARATORS[key] === separator) {
+                // verranno triggerati gli eventi onDidCloseTextDocument e onDidOpenTextDocument
+                vscode.languages.setTextDocumentLanguage(textEditor.document, key);
+                return;
+            }
+        }
+    }
+    showError('Separator not supported. Available character separators are ' + Object.values(SEPARATORS).join(' '));
+}
+
+function toggleQuote(textEditor, edit) {
+    // TODO
+    // try {
+    //     const document = textEditor.document;
+    //     const separator = SEPARATORS[document.languageId];
+    //     if (separator) {
+    //         for (let ii = 0; ii < document.lineCount; ii++) {
+    //             const line = document.lineAt(ii);
+    //             if (!line.isEmptyOrWhitespace) {
+    //                 let inquote = false;
+    //                 let count = 0;
+    //                 let fieldStart = 0;
+    //                 for (let ch of line.text) {
+    //                     switch (ch) {
+    //                         case '"':
+    //                         case separator:
+    //                         default:
+    //                             break;
+    //                     }
+    //                 }
+
+    //                 // edit.replace(line.range, '>>> ' + line.text);
+    //             }
+    //         }
+    //     } else {
+    //         showError('Document language not valid: select a CSV-like language and try again');
+    //     }
+    // } catch (e) {
+    //     console.error(e);
+    // }
+}
 
 exports.activate = (context) => {
-    console.log('activate')
-    !info && (info = new CSVHelper());
-    context.subscriptions.push(info);
-    vscode.commands.registerTextEditorCommand('extension.setSeparatorFromSelection', textEditor => info.setSeparatorFromSelection(textEditor));
+    helper.init();
+    context.subscriptions.push(helper);
+    vscode.commands.registerTextEditorCommand('extension.setSeparatorFromSelection', setSeparatorFromSelection);
+    vscode.commands.registerTextEditorCommand('extension.toggleQuote', toggleQuote);
 };
 
 exports.deactivate = () => {
-    console.log('deactivate')
-    info && info.dispose();
+    helper.dispose();
 };
