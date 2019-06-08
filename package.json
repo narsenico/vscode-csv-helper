@@ -38,6 +38,10 @@
             {
                 "command": "extension.setSeparatorFromSelection",
                 "title": "vscode-csv-helper: set document separator"
+            },
+            {
+                "command": "extension.toggleQuote",
+                "title": "vscode-csv-helper: toggle quote"
             }
         ],
         "languages": [
